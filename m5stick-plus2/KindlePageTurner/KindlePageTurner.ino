@@ -81,15 +81,7 @@ void sendPage(const char* direction) {
     int code = http.GET();
     http.end();
 
-    M5.Lcd.fillScreen(code == 200 ? GREEN : RED);
-    M5.Lcd.setCursor(10, 30);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.println(direction);
-    delay(150);
-
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setCursor(10, 30);
-    M5.Lcd.println("Ready!");
+    // Silent operation - no screen flash
 }
 
 void loop() {
