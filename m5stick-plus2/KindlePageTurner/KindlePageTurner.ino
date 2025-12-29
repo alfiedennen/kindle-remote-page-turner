@@ -58,30 +58,34 @@ void setup() {
 }
 
 void sendPage(const char* direction) {
+    // Check WiFi and reconnect if needed
     if (WiFi.status() != WL_CONNECTED) {
-        M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setCursor(10, 30);
-        M5.Lcd.setTextSize(2);
-        M5.Lcd.println("Reconnecting...");
         WiFi.reconnect();
-        delay(2000);
+        int retries = 0;
+        while (WiFi.status() != WL_CONNECTED && retries < 10) {
+            delay(200);
+            retries++;
+        }
         if (WiFi.status() != WL_CONNECTED) {
-            M5.Lcd.fillScreen(RED);
-            M5.Lcd.setCursor(10, 30);
-            M5.Lcd.println("No WiFi!");
-            delay(1000);
-            return;
+            return; // Give up silently
         }
     }
 
-    HTTPClient http;
-    String url = String("http://") + kindleIP + ":8888/" + direction;
-    http.begin(url);
-    http.setTimeout(2000);
-    int code = http.GET();
-    http.end();
+    // Try up to 3 times
+    for (int attempt = 0; attempt < 3; attempt++) {
+        HTTPClient http;
+        String url = String("http://") + kindleIP + ":8888/" + direction;
+        http.begin(url);
+        http.setTimeout(3000);
+        http.setConnectTimeout(2000);
+        int code = http.GET();
+        http.end();
 
-    // Silent operation - no screen flash
+        if (code == 200) {
+            return; // Success
+        }
+        delay(100); // Brief pause before retry
+    }
 }
 
 void loop() {
