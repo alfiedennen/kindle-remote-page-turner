@@ -1,0 +1,30 @@
+# Arduino build files
+*.elf
+*.bin
+*.hex
+build/
+
+# IDE files
+.vscode/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Downloaded tools (not needed in repo)
+arduino-cli/
+arduino-cli.zip
+esp32-packages/
+
+# Old documentation files (consolidated into docs/)
+KINDLE-REMOTE-PAGE-TURNER.md
+IOT-REMOTE-OPTIONS.md
+m5stack_package_index.json
+
+# Local config with credentials (root folder with actual credentials)
+/KindlePageTurner/
+
+# Logs
+*.log
+nul
