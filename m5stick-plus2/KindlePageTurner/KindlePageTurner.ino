@@ -6,6 +6,10 @@
  *   - Single tap (front button): Next page
  *   - Double tap (front button): Previous page
  *
+ * Features:
+ *   - Battery percentage display (color-coded)
+ *   - Auto-shutdown after 2.5 minutes of inactivity
+ *
  * Setup:
  *   1. Update WiFi credentials below
  *   2. Update Kindle IP address
@@ -28,6 +32,35 @@ const char* kindleIP = "192.168.1.100";  // Your Kindle's IP address
 unsigned long lastTapTime = 0;
 const unsigned long doubleTapWindow = 300; // ms window for double-tap
 bool waitingForSecondTap = false;
+
+// Auto-shutdown after inactivity
+unsigned long lastActivityTime = 0;
+const unsigned long inactivityTimeout = 150000; // 2.5 minutes in ms
+
+// Battery display
+unsigned long lastBatteryUpdate = 0;
+const unsigned long batteryUpdateInterval = 5000; // Update every 5 seconds
+int lastBatteryLevel = -1;
+
+void updateBatteryDisplay() {
+    int batteryLevel = M5.Power.getBatteryLevel();
+    if (batteryLevel == lastBatteryLevel) return; // No change
+    lastBatteryLevel = batteryLevel;
+
+    // Clear battery area (top-right corner)
+    M5.Lcd.fillRect(170, 5, 70, 20, BLACK);
+
+    // Set color based on level
+    uint16_t color = GREEN;
+    if (batteryLevel <= 20) color = RED;
+    else if (batteryLevel <= 50) color = YELLOW;
+
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setTextColor(color, BLACK);
+    M5.Lcd.setCursor(170, 5);
+    M5.Lcd.printf("%d%%", batteryLevel);
+    M5.Lcd.setTextColor(WHITE, BLACK); // Reset color
+}
 
 void setup() {
     auto cfg = M5.config();
@@ -55,6 +88,9 @@ void setup() {
     } else {
         M5.Lcd.println("No WiFi!");
     }
+
+    updateBatteryDisplay();
+    lastActivityTime = millis();
 }
 
 void sendPage(const char* direction) {
@@ -92,8 +128,20 @@ void loop() {
     M5.update();
     unsigned long now = millis();
 
+    // Auto-shutdown after inactivity
+    if (now - lastActivityTime >= inactivityTimeout) {
+        M5.Power.powerOff();
+    }
+
+    // Update battery display periodically
+    if (now - lastBatteryUpdate >= batteryUpdateInterval) {
+        lastBatteryUpdate = now;
+        updateBatteryDisplay();
+    }
+
     // Front button (A) - single tap = next, double tap = prev
     if (M5.BtnA.wasPressed()) {
+        lastActivityTime = now; // Reset inactivity timer
         if (waitingForSecondTap && (now - lastTapTime < doubleTapWindow)) {
             // Double tap detected - go back
             waitingForSecondTap = false;
